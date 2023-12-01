@@ -12,13 +12,13 @@ func main() {
 	r.LoadHTMLGlob("templates/components/*")
 
 	r.GET("/", func(c *gin.Context) {
-		view, err := RenderTemplates("main", "home")
+		var view []byte
 
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": err.Error(),
-			})
-			return
+		// check Hx-Request header
+		if c.GetHeader("Hx-Request") == "true" {
+			view, _ = RenderTemplates("htmx", "home")
+		} else {
+			view, _ = RenderTemplates("main", "home")
 		}
 
 		c.Data(http.StatusOK, "text/html; charset=utf-8", view)
