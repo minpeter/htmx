@@ -6,39 +6,33 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func viewRender(c *gin.Context) {
+	var view []byte
+
+	templateName := c.Request.URL.Path
+
+	if templateName == "/" {
+		templateName = "home"
+	}
+
+	if c.GetHeader("Hx-Request") == "true" {
+		view, _ = RenderTemplates("htmx", templateName)
+	} else {
+		view, _ = RenderTemplates("main", templateName)
+	}
+	c.Data(http.StatusOK, "text/html; charset=utf-8", view)
+}
+
 func main() {
 	r := gin.Default()
 
 	r.LoadHTMLGlob("templates/components/*")
 
-	r.GET("/", func(c *gin.Context) {
-		var view []byte
+	view := r.Group("/")
+	view.Use(viewRender)
+	view.GET("/", func(c *gin.Context) {})
+	view.GET("/challenge", func(c *gin.Context) {})
 
-		// check Hx-Request header
-		if c.GetHeader("Hx-Request") == "true" {
-			view, _ = RenderTemplates("htmx", "home")
-		} else {
-			view, _ = RenderTemplates("main", "home")
-		}
-
-		c.Data(http.StatusOK, "text/html; charset=utf-8", view)
-	})
-
-	r.GET("/challenge", func(c *gin.Context) {
-
-		var view []byte
-
-		// check Hx-Request header
-		if c.GetHeader("Hx-Request") == "true" {
-			view, _ = RenderTemplates("htmx", "challenge")
-		} else {
-			view, _ = RenderTemplates("main", "challenge")
-		}
-
-		c.Data(http.StatusOK, "text/html; charset=utf-8", view)
-	})
-
-	// GET /new 라우터를 만들고 templates/pages/create.tmpl를 렌더링합니다.
 	r.GET("/new", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "create.tmpl", nil)
 	})
@@ -47,5 +41,5 @@ func main() {
 		c.HTML(http.StatusOK, "remove.tmpl", nil)
 	})
 
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.Run("localhost:8080")
 }
